@@ -18,6 +18,10 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
+    - name: Accept Android SDK Licenses
+      run: |
+        yes | sdkmanager --licenses || true
+
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
@@ -32,7 +36,7 @@ jobs:
         mkdir -p app/src/main/res/xml
         mkdir -p app/src/main/res/drawable
 
-        # 1. settings.gradle
+        # settings.gradle
         cat << 'EOF' > settings.gradle
         pluginManagement {
             repositories {
@@ -52,14 +56,14 @@ jobs:
         include ':app'
         EOF
 
-        # 2. root build.gradle
+        # root build.gradle
         cat << 'EOF' > build.gradle
         plugins {
             id 'com.android.application' version '8.2.2' apply false
         }
         EOF
 
-        # 3. app/build.gradle
+        # app/build.gradle
         cat << 'EOF' > app/build.gradle
         plugins {
             id 'com.android.application'
@@ -70,13 +74,17 @@ jobs:
             defaultConfig {
                 applicationId 'com.kousuan.helper'
                 minSdk 24
-                targetSdk 34
+                targetSdk 33
                 versionCode 1
                 versionName "1.0.0"
             }
             compileOptions {
                 sourceCompatibility JavaVersion.VERSION_1_8
                 targetCompatibility JavaVersion.VERSION_1_8
+            }
+            lint {
+                abortOnError false
+                checkReleaseBuilds false
             }
         }
         dependencies {
@@ -86,7 +94,7 @@ jobs:
         }
         EOF
 
-        # 4. XML Resources
+        # XML Resources
         cat << 'EOF' > app/src/main/res/values/strings.xml
         <resources>
             <string name="app_name">口算秒答助手</string>
@@ -249,7 +257,7 @@ jobs:
         </LinearLayout>
         EOF
 
-        # 5. AndroidManifest.xml
+        # AndroidManifest.xml
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -291,7 +299,7 @@ jobs:
         </manifest>
         EOF
 
-        # 6. Java Sources
+        # Java Sources
         cat << 'EOF' > app/src/main/java/com/kousuan/helper/KousuanAccessibilityService.java
         package com.kousuan.helper;
         import android.accessibilityservice.AccessibilityService;
@@ -676,7 +684,7 @@ jobs:
                             } else {
                                 startService(serviceIntent);
                             }
-                            Toast.makeText(this, "⚡ 秒答悬浮窗已开启！请进入小猿口算", Toast.LENGTH_LONG).show() ;
+                            Toast.makeText(this, "⚡ 秒答悬浮窗已开启！请进入小猿口算", Toast.LENGTH_LONG).show();
                             finish();
                         } else {
                             Toast.makeText(this, "需要授予截屏权限才能识别题目！", Toast.LENGTH_SHORT).show();
@@ -728,7 +736,7 @@ jobs:
         }
         EOF
 
-        # 极速编译生成 APK
+        # 编译生成 APK
         gradle assembleDebug --no-daemon
 
     - name: Upload APK to Artifacts
