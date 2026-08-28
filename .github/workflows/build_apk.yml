@@ -91,49 +91,23 @@ jobs:
         }
         EOF
 
-        # 4. AndroidManifest.xml
-        cat << 'EOF' > app/src/main/AndroidManifest.xml
-        <?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-            <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-            <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-            <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
-            <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-            <application
-                android:allowBackup="true"
-                android:icon="@android:drawable/sym_def_app_icon"
-                android:label="口算秒答助手"
-                android:supportsRtl="true"
-                android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar">
-                <activity
-                    android:name=".MainActivity"
-                    android:exported="true">
-                    <intent-filter>
-                        <action android:name="android.intent.action.MAIN" />
-                        <category android:name="android.intent.category.LAUNCHER" />
-                    </intent-filter>
-                </activity>
-                <service
-                    android:name=".FloatingWindowService"
-                    android:enabled="true"
-                    android:exported="false"
-                    android:foregroundServiceType="mediaProjection" />
-                <service
-                    android:name=".KousuanAccessibilityService"
-                    android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-                    android:exported="true">
-                    <intent-filter>
-                        <action android:name="android.accessibilityservice.AccessibilityService" />
-                    </intent-filter>
-                    <meta-data
-                        android:name="android.accessibilityservice"
-                        android:resource="@xml/accessibility_service_config" />
-                </service>
-            </application>
-        </manifest>
+        # 4. XML Resources (strings, themes, colors, etc.)
+        cat << 'EOF' > app/src/main/res/values/strings.xml
+        <resources>
+            <string name="app_name">口算秒答助手</string>
+            <string name="accessibility_desc">口算PK手势自动作答</string>
+        </resources>
         EOF
 
-        # 5. XML Resources
+        cat << 'EOF' > app/src/main/res/values/themes.xml
+        <resources>
+            <style name="Theme.KousuanHelper" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+                <item name="colorPrimary">#3B82F6</item>
+                <item name="android:statusBarColor">#0F172A</item>
+            </style>
+        </resources>
+        EOF
+
         cat << 'EOF' > app/src/main/res/xml/accessibility_service_config.xml
         <?xml version="1.0" encoding="utf-8"?>
         <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
@@ -142,6 +116,7 @@ jobs:
             android:accessibilityFlags="flagDefault"
             android:canPerformGestures="true"
             android:canRetrieveWindowContent="true"
+            android:description="@string/accessibility_desc"
             android:notificationTimeout="50" />
         EOF
 
@@ -277,6 +252,48 @@ jobs:
                 android:layout_marginTop="2dp"
                 android:maxLines="1" />
         </LinearLayout>
+        EOF
+
+        # 5. AndroidManifest.xml
+        cat << 'EOF' > app/src/main/AndroidManifest.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+            <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+            <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+            <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+            <application
+                android:allowBackup="true"
+                android:icon="@android:drawable/sym_def_app_icon"
+                android:label="@string/app_name"
+                android:supportsRtl="true"
+                android:theme="@style/Theme.KousuanHelper">
+                <activity
+                    android:name=".MainActivity"
+                    android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
+                </activity>
+                <service
+                    android:name=".FloatingWindowService"
+                    android:enabled="true"
+                    android:exported="false"
+                    android:foregroundServiceType="mediaProjection" />
+                <service
+                    android:name=".KousuanAccessibilityService"
+                    android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+                    android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.accessibilityservice.AccessibilityService" />
+                    </intent-filter>
+                    <meta-data
+                        android:name="android.accessibilityservice"
+                        android:resource="@xml/accessibility_service_config" />
+                </service>
+            </application>
+        </manifest>
         EOF
 
         # 6. Kotlin Sources
