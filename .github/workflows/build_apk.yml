@@ -23,16 +23,17 @@ jobs:
       with:
         gradle-version: '8.5'
 
-    - name: Generate Complete Clean Project & Build APK
+    - name: Generate Clean Project & Build APK
       run: |
+        rm -rf app settings.gradle* build.gradle*
         mkdir -p app/src/main/java/com/kousuan/helper
         mkdir -p app/src/main/res/layout
         mkdir -p app/src/main/res/values
         mkdir -p app/src/main/res/xml
         mkdir -p app/src/main/res/drawable
 
-        # 1. settings.gradle.kts
-        cat << 'EOF' > settings.gradle.kts
+        # 1. settings.gradle
+        cat << 'EOF' > settings.gradle
         pluginManagement {
             repositories {
                 google()
@@ -48,50 +49,44 @@ jobs:
             }
         }
         rootProject.name = "KousuanHelper"
-        include(":app")
+        include ':app'
         EOF
 
-        # 2. root build.gradle.kts
-        cat << 'EOF' > build.gradle.kts
+        # 2. root build.gradle
+        cat << 'EOF' > build.gradle
         plugins {
-            id("com.android.application") version "8.2.2" apply false
-            id("org.jetbrains.kotlin.android") version "1.9.22" apply false
+            id 'com.android.application' version '8.2.2' apply false
         }
         EOF
 
-        # 3. app/build.gradle.kts
-        cat << 'EOF' > app/build.gradle.kts
+        # 3. app/build.gradle
+        cat << 'EOF' > app/build.gradle
         plugins {
-            id("com.android.application")
-            id("org.jetbrains.kotlin.android")
+            id 'com.android.application'
         }
         android {
-            namespace = "com.kousuan.helper"
-            compileSdk = 34
+            namespace 'com.kousuan.helper'
+            compileSdk 34
             defaultConfig {
-                applicationId = "com.kousuan.helper"
-                minSdk = 24
-                targetSdk = 34
-                versionCode = 1
-                versionName = "1.0.0"
+                applicationId 'com.kousuan.helper'
+                minSdk 24
+                targetSdk 34
+                versionCode 1
+                versionName "1.0.0"
             }
             compileOptions {
-                sourceCompatibility = JavaVersion.VERSION_1_8
-                targetCompatibility = JavaVersion.VERSION_1_8
-            }
-            kotlinOptions {
-                jvmTarget = "1.8"
+                sourceCompatibility JavaVersion.VERSION_1_8
+                targetCompatibility JavaVersion.VERSION_1_8
             }
         }
         dependencies {
-            implementation("androidx.core:core-ktx:1.12.0")
-            implementation("androidx.appcompat:appcompat:1.6.1")
-            implementation("com.google.android.material:material:1.11.0")
-            implementation("com.google.mlkit:text-recognition:16.0.0")
+            implementation 'androidx.appcompat:appcompat:1.6.1'
+            implementation 'com.google.android.material:material:1.11.0'
+            implementation 'com.google.mlkit:text-recognition:16.0.0'
         }
         EOF
 
-        # 4. XML Resources (strings, themes, colors, etc.)
+        # 4. XML Resources
         cat << 'EOF' > app/src/main/res/values/strings.xml
         <resources>
             <string name="app_name">口算秒答助手</string>
@@ -296,436 +291,444 @@ jobs:
         </manifest>
         EOF
 
-        # 6. Kotlin Sources
-        cat << 'EOF' > app/src/main/java/com/kousuan/helper/KousuanAccessibilityService.kt
-        package com.kousuan.helper
-        import android.accessibilityservice.AccessibilityService
-        import android.accessibilityservice.GestureDescription
-        import android.graphics.Path
-        import android.view.accessibility.AccessibilityEvent
-        class KousuanAccessibilityService : AccessibilityService() {
-            companion object {
-                var instance: KousuanAccessibilityService? = null
-                    private set
+        # 6. Java Sources
+        cat << 'EOF' > app/src/main/java/com/kousuan/helper/KousuanAccessibilityService.java
+        package com.kousuan.helper;
+        import android.accessibilityservice.AccessibilityService;
+        import android.accessibilityservice.GestureDescription;
+        import android.graphics.Path;
+        import android.view.accessibility.AccessibilityEvent;
+        public class KousuanAccessibilityService extends AccessibilityService {
+            public static KousuanAccessibilityService instance = null;
+            @Override
+            protected void onServiceConnected() {
+                super.onServiceConnected();
+                instance = this;
             }
-            override fun onServiceConnected() {
-                super.onServiceConnected()
-                instance = this
+            @Override
+            public void onAccessibilityEvent(AccessibilityEvent event) {}
+            @Override
+            public void onInterrupt() { instance = null; }
+            @Override
+            public void onDestroy() { super.onDestroy(); instance = null; }
+            public void drawGreaterThan(float cx, float cy, float size, long strokeDurationMs) {
+                Path path = new Path();
+                path.moveTo(cx - size, cy - size);
+                path.lineTo(cx + size, cy);
+                path.lineTo(cx - size, cy + size);
+                dispatchStroke(path, strokeDurationMs);
             }
-            override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
-            override fun onInterrupt() { instance = null }
-            override fun onDestroy() { super.onDestroy(); instance = null }
-            fun drawGreaterThan(cx: Float, cy: Float, size: Float, strokeDurationMs: Long = 20) {
-                val path = Path().apply {
-                    moveTo(cx - size, cy - size)
-                    lineTo(cx + size, cy)
-                    lineTo(cx - size, cy + size)
-                }
-                dispatchStroke(path, strokeDurationMs)
+            public void drawLessThan(float cx, float cy, float size, long strokeDurationMs) {
+                Path path = new Path();
+                path.moveTo(cx + size, cy - size);
+                path.lineTo(cx - size, cy);
+                path.lineTo(cx + size, cy + size);
+                dispatchStroke(path, strokeDurationMs);
             }
-            fun drawLessThan(cx: Float, cy: Float, size: Float, strokeDurationMs: Long = 20) {
-                val path = Path().apply {
-                    moveTo(cx + size, cy - size)
-                    lineTo(cx - size, cy)
-                    lineTo(cx + size, cy + size)
-                }
-                dispatchStroke(path, strokeDurationMs)
+            public void drawEqual(float cx, float cy, float width, float height, long strokeDurationMs) {
+                Path path1 = new Path();
+                path1.moveTo(cx - width, cy - height);
+                path1.lineTo(cx + width, cy - height);
+                Path path2 = new Path();
+                path2.moveTo(cx - width, cy + height);
+                path2.lineTo(cx + width, cy + height);
+                GestureDescription.Builder builder = new GestureDescription.Builder();
+                builder.addStroke(new GestureDescription.StrokeDescription(path1, 0, strokeDurationMs));
+                builder.addStroke(new GestureDescription.StrokeDescription(path2, strokeDurationMs + 5, strokeDurationMs));
+                dispatchGesture(builder.build(), null, null);
             }
-            fun drawEqual(cx: Float, cy: Float, width: Float, height: Float, strokeDurationMs: Long = 15) {
-                val path1 = Path().apply {
-                    moveTo(cx - width, cy - height)
-                    lineTo(cx + width, cy - height)
-                }
-                val path2 = Path().apply {
-                    moveTo(cx - width, cy + height)
-                    lineTo(cx + width, cy + height)
-                }
-                val builder = GestureDescription.Builder()
-                builder.addStroke(GestureDescription.StrokeDescription(path1, 0, strokeDurationMs))
-                builder.addStroke(GestureDescription.StrokeDescription(path2, strokeDurationMs + 5, strokeDurationMs))
-                dispatchGesture(builder.build(), null, null)
-            }
-            private fun dispatchStroke(path: Path, durationMs: Long) {
-                val stroke = GestureDescription.StrokeDescription(path, 0, durationMs)
-                val gesture = GestureDescription.Builder().addStroke(stroke).build()
-                dispatchGesture(gesture, null, null)
+            private void dispatchStroke(Path path, long durationMs) {
+                GestureDescription.StrokeDescription stroke = new GestureDescription.StrokeDescription(path, 0, durationMs);
+                GestureDescription gesture = new GestureDescription.Builder().addStroke(stroke).build();
+                dispatchGesture(gesture, null, null);
             }
         }
         EOF
 
-        cat << 'EOF' > app/src/main/java/com/kousuan/helper/KousuanSolver.kt
-        package com.kousuan.helper
-        import java.util.regex.Pattern
-        object KousuanSolver {
-            fun solve(rawText: String): String? {
-                if (rawText.isBlank()) return null
-                val text = rawText.replace("\\s+".toRegex(), "")
-                    .replace("o", "0", ignoreCase = true)
-                    .replace("l", "1", ignoreCase = true)
-                    .replace("I", "1")
-                    .replace("x", "×", ignoreCase = true)
-                val matcher = Pattern.compile("(\\d+)[^0-9]?(\\d+)").matcher(text)
+        cat << 'EOF' > app/src/main/java/com/kousuan/helper/KousuanSolver.java
+        package com.kousuan.helper;
+        import java.util.regex.Matcher;
+        import java.util.regex.Pattern;
+        public class KousuanSolver {
+            public static String solve(String rawText) {
+                if (rawText == null || rawText.trim().isEmpty()) return null;
+                String text = rawText.replaceAll("\\s+", "")
+                        .replace("o", "0").replace("O", "0")
+                        .replace("l", "1").replace("I", "1")
+                        .replace("x", "×").replace("X", "×");
+                Pattern pattern = Pattern.compile("(\\d+)[^0-9]?(\\d+)");
+                Matcher matcher = pattern.matcher(text);
                 if (matcher.find()) {
-                    val num1 = matcher.group(1)?.toLongOrNull()
-                    val num2 = matcher.group(2)?.toLongOrNull()
-                    if (num1 != null && num2 != null) {
-                        return when {
-                            num1 > num2 -> ">"
-                            num1 < num2 -> "<"
-                            else -> "="
-                        }
-                    }
+                    try {
+                        long num1 = Long.parseLong(matcher.group(1));
+                        long num2 = Long.parseLong(matcher.group(2));
+                        if (num1 > num2) return ">";
+                        if (num1 < num2) return "<";
+                        return "=";
+                    } catch (Exception ignored) {}
                 }
-                return null
+                return null;
             }
         }
         EOF
 
-        cat << 'EOF' > app/src/main/java/com/kousuan/helper/ScreenCaptureManager.kt
-        package com.kousuan.helper
-        import android.content.Context
-        import android.graphics.Bitmap
-        import android.graphics.PixelFormat
-        import android.hardware.display.DisplayManager
-        import android.hardware.display.VirtualDisplay
-        import android.media.ImageReader
-        import android.media.projection.MediaProjection
-        import android.os.Handler
-        import android.os.Looper
-        import android.util.DisplayMetrics
-        import android.view.WindowManager
-        import com.google.mlkit.vision.common.InputImage
-        import com.google.mlkit.vision.text.TextRecognition
-        import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-        class ScreenCaptureManager(private val context: Context) {
-            private var mediaProjection: MediaProjection? = null
-            private var virtualDisplay: VirtualDisplay? = null
-            private var imageReader: ImageReader? = null
-            private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-            private var screenWidth = 1080
-            private var screenHeight = 2400
-            private var screenDensity = 480
-            init {
-                val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-                val metrics = DisplayMetrics()
-                wm.defaultDisplay.getRealMetrics(metrics)
-                screenWidth = metrics.widthPixels
-                screenHeight = metrics.heightPixels
-                screenDensity = metrics.densityDpi
+        cat << 'EOF' > app/src/main/java/com/kousuan/helper/ScreenCaptureManager.java
+        package com.kousuan.helper;
+        import android.content.Context;
+        import android.graphics.Bitmap;
+        import android.graphics.PixelFormat;
+        import android.hardware.display.DisplayManager;
+        import android.hardware.display.VirtualDisplay;
+        import android.media.Image;
+        import android.media.ImageReader;
+        import android.media.projection.MediaProjection;
+        import android.os.Handler;
+        import android.os.Looper;
+        import android.util.DisplayMetrics;
+        import android.view.WindowManager;
+        import com.google.mlkit.vision.common.InputImage;
+        import com.google.mlkit.vision.text.TextRecognition;
+        import com.google.mlkit.vision.text.TextRecognizer;
+        import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
+        import java.nio.ByteBuffer;
+        public class ScreenCaptureManager {
+            private MediaProjection mediaProjection;
+            private VirtualDisplay virtualDisplay;
+            private ImageReader imageReader;
+            private final TextRecognizer recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS);
+            private int screenWidth = 1080;
+            private int screenHeight = 2400;
+            private int screenDensity = 480;
+            public interface OcrCallback {
+                void onResult(String text);
             }
-            fun initProjection(projection: MediaProjection) {
-                this.mediaProjection = projection
-                imageReader = ImageReader.newInstance(screenWidth, screenHeight, PixelFormat.RGBA_8888, 2)
-                virtualDisplay = projection.createVirtualDisplay(
-                    "KousuanCapture",
-                    screenWidth, screenHeight, screenDensity,
-                    DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-                    imageReader?.surface, null, Handler(Looper.getMainLooper())
-                )
+            public ScreenCaptureManager(Context context) {
+                WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+                DisplayMetrics metrics = new DisplayMetrics();
+                wm.getDefaultDisplay().getRealMetrics(metrics);
+                screenWidth = metrics.widthPixels;
+                screenHeight = metrics.heightPixels;
+                screenDensity = metrics.densityDpi;
             }
-            fun captureQuestionBitmap(): Bitmap? {
-                val image = imageReader?.acquireLatestImage() ?: return null
-                val planes = image.planes
-                val buffer = planes[0].buffer
-                val pixelStride = planes[0].pixelStride
-                val rowStride = planes[0].rowStride
-                val rowPadding = rowStride - pixelStride * screenWidth
-                val bitmap = Bitmap.createBitmap(
-                    screenWidth + rowPadding / pixelStride,
-                    screenHeight,
-                    Bitmap.Config.ARGB_8888
-                )
-                bitmap.copyPixelsFromBuffer(buffer)
-                image.close()
-                val cropX = (screenWidth * 0.10).toInt()
-                val cropY = (screenHeight * 0.18).toInt()
-                val cropW = (screenWidth * 0.80).toInt()
-                val cropH = (screenHeight * 0.28).toInt()
-                return Bitmap.createBitmap(bitmap, cropX, cropY, cropW, cropH)
+            public void initProjection(MediaProjection projection) {
+                this.mediaProjection = projection;
+                this.imageReader = ImageReader.newInstance(screenWidth, screenHeight, PixelFormat.RGBA_8888, 2);
+                this.virtualDisplay = projection.createVirtualDisplay(
+                        "KousuanCapture",
+                        screenWidth, screenHeight, screenDensity,
+                        DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                        imageReader.getSurface(), null, new Handler(Looper.getMainLooper())
+                );
             }
-            fun recognizeText(bitmap: Bitmap, onResult: (String) -> Unit) {
-                val inputImage = InputImage.fromBitmap(bitmap, 0)
+            public Bitmap captureQuestionBitmap() {
+                if (imageReader == null) return null;
+                Image image = imageReader.acquireLatestImage();
+                if (image == null) return null;
+                Image.Plane[] planes = image.getPlanes();
+                ByteBuffer buffer = planes[0].getBuffer();
+                int pixelStride = planes[0].getPixelStride();
+                int rowStride = planes[0].getRowStride();
+                int rowPadding = rowStride - pixelStride * screenWidth;
+                Bitmap bitmap = Bitmap.createBitmap(
+                        screenWidth + rowPadding / pixelStride,
+                        screenHeight,
+                        Bitmap.Config.ARGB_8888
+                );
+                bitmap.copyPixelsFromBuffer(buffer);
+                image.close();
+                int cropX = (int) (screenWidth * 0.10);
+                int cropY = (int) (screenHeight * 0.18);
+                int cropW = (int) (screenWidth * 0.80);
+                int cropH = (int) (screenHeight * 0.28);
+                return Bitmap.createBitmap(bitmap, cropX, cropY, cropW, cropH);
+            }
+            public void recognizeText(Bitmap bitmap, OcrCallback callback) {
+                InputImage inputImage = InputImage.fromBitmap(bitmap, 0);
                 recognizer.process(inputImage)
-                    .addOnSuccessListener { visionText -> onResult(visionText.text) }
-                    .addOnFailureListener { onResult("") }
+                        .addOnSuccessListener(visionText -> callback.onResult(visionText.getText()))
+                        .addOnFailureListener(e -> callback.onResult(""));
             }
-            fun release() {
-                virtualDisplay?.release()
-                imageReader?.close()
-                mediaProjection?.stop()
+            public void release() {
+                if (virtualDisplay != null) virtualDisplay.release();
+                if (imageReader != null) imageReader.close();
+                if (mediaProjection != null) mediaProjection.stop();
             }
         }
         EOF
 
-        cat << 'EOF' > app/src/main/java/com/kousuan/helper/FloatingWindowService.kt
-        package com.kousuan.helper
-        import android.app.Notification
-        import android.app.NotificationChannel
-        import android.app.NotificationManager
-        import android.app.Service
-        import android.content.Context
-        import android.content.Intent
-        import android.graphics.PixelFormat
-        import android.os.Build
-        import android.os.Handler
-        import android.os.IBinder
-        import android.os.Looper
-        import android.view.*
-        import android.widget.Button
-        import android.widget.TextView
-        import androidx.core.app.NotificationCompat
-        import java.util.concurrent.atomic.AtomicBoolean
-        class FloatingWindowService : Service() {
-            private lateinit var windowManager: WindowManager
-            private lateinit var floatingView: View
-            private lateinit var params: WindowManager.LayoutParams
-            private var isRunning = AtomicBoolean(false)
-            private var solvedCount = 0
-            private var strokeSpeedMs = 20L
-            private var lastQuestionText = ""
-            private val mainHandler = Handler(Looper.getMainLooper())
-            private var loopThread: Thread? = null
-            companion object {
-                var captureManager: ScreenCaptureManager? = null
+        cat << 'EOF' > app/src/main/java/com/kousuan/helper/FloatingWindowService.java
+        package com.kousuan.helper;
+        import android.app.Notification;
+        import android.app.NotificationChannel;
+        import android.app.NotificationManager;
+        import android.app.Service;
+        import android.content.Context;
+        import android.content.Intent;
+        import android.graphics.Bitmap;
+        import android.graphics.PixelFormat;
+        import android.os.Build;
+        import android.os.Handler;
+        import android.os.IBinder;
+        import android.os.Looper;
+        import android.util.DisplayMetrics;
+        import android.view.Gravity;
+        import android.view.LayoutInflater;
+        import android.view.MotionEvent;
+        import android.view.View;
+        import android.view.WindowManager;
+        import android.widget.Button;
+        import android.widget.TextView;
+        import androidx.core.app.NotificationCompat;
+        import java.util.concurrent.atomic.AtomicBoolean;
+        public class FloatingWindowService extends Service {
+            private WindowManager windowManager;
+            private View floatingView;
+            private WindowManager.LayoutParams params;
+            private final AtomicBoolean isRunning = new AtomicBoolean(false);
+            private int solvedCount = 0;
+            private long strokeSpeedMs = 20;
+            private String lastQuestionText = "";
+            private final Handler mainHandler = new Handler(Looper.getMainLooper());
+            private Thread loopThread = null;
+            public static ScreenCaptureManager captureManager = null;
+            @Override
+            public IBinder onBind(Intent intent) { return null; }
+            @Override
+            public void onCreate() {
+                super.onCreate();
+                startForegroundNotification();
+                initFloatingWindow();
             }
-            override fun onBind(intent: Intent?): IBinder? = null
-            override fun onCreate() {
-                super.onCreate()
-                startForegroundServiceNotification()
-                initFloatingWindow()
-            }
-            private fun startForegroundServiceNotification() {
-                val channelId = "kousuan_floating_channel"
+            private void startForegroundNotification() {
+                String channelId = "kousuan_channel";
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    val channel = NotificationChannel(
-                        channelId, "口算助手前台服务",
-                        NotificationManager.IMPORTANCE_LOW
-                    )
-                    val nm = getSystemService(NotificationManager::class.java)
-                    nm?.createNotificationChannel(channel)
+                    NotificationChannel channel = new NotificationChannel(
+                            channelId, "口算助手服务",
+                            NotificationManager.IMPORTANCE_LOW
+                    );
+                    NotificationManager nm = getSystemService(NotificationManager.class);
+                    if (nm != null) nm.createNotificationChannel(channel);
                 }
-                val notification: Notification = NotificationCompat.Builder(this, channelId)
-                    .setContentTitle("口算秒答助手正在运行")
-                    .setContentText("悬浮窗已就绪，点击开始PK")
-                    .setSmallIcon(android.R.drawable.ic_media_play)
-                    .build()
-                startForeground(1001, notification)
+                Notification notification = new NotificationCompat.Builder(this, channelId)
+                        .setContentTitle("口算秒答助手运行中")
+                        .setContentText("悬浮窗已开启")
+                        .setSmallIcon(android.R.drawable.ic_media_play)
+                        .build();
+                startForeground(1001, notification);
             }
-            private fun initFloatingWindow() {
-                windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-                val inflater = LayoutInflater.from(this)
-                floatingView = inflater.inflate(R.layout.layout_floating_window, null)
-                val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                } else {
-                    WindowManager.LayoutParams.TYPE_PHONE
-                }
-                params = WindowManager.LayoutParams(
-                    WindowManager.LayoutParams.WRAP_CONTENT,
-                    WindowManager.LayoutParams.WRAP_CONTENT,
-                    layoutType,
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                    PixelFormat.TRANSLUCENT
-                ).apply {
-                    gravity = Gravity.TOP or Gravity.START
-                    x = 50
-                    y = 200
-                }
-                windowManager.addView(floatingView, params)
-                setupInteractions()
+            private void initFloatingWindow() {
+                windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+                LayoutInflater inflater = LayoutInflater.from(this);
+                floatingView = inflater.inflate(R.layout.layout_floating_window, null);
+                int layoutType = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                        ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                        : WindowManager.LayoutParams.TYPE_PHONE;
+                params = new WindowManager.LayoutParams(
+                        WindowManager.LayoutParams.WRAP_CONTENT,
+                        WindowManager.LayoutParams.WRAP_CONTENT,
+                        layoutType,
+                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                        PixelFormat.TRANSLUCENT
+                );
+                params.gravity = Gravity.TOP | Gravity.START;
+                params.x = 50;
+                params.y = 200;
+                windowManager.addView(floatingView, params);
+                setupInteractions();
             }
-            private fun setupInteractions() {
-                val dragBar = floatingView.findViewById<View>(R.id.layoutDragBar)
-                val btnToggle = floatingView.findViewById<Button>(R.id.btnToggle)
-                val btnSpeed = floatingView.findViewById<Button>(R.id.btnSpeed)
-                val btnClose = floatingView.findViewById<Button>(R.id.btnClose)
-                val tvSolvedBadge = floatingView.findViewById<TextView>(R.id.tvSolvedBadge)
-                val tvStatus = floatingView.findViewById<TextView>(R.id.tvStatus)
-                dragBar.setOnTouchListener(object : View.OnTouchListener {
-                    private var initialX = 0
-                    private var initialY = 0
-                    private var initialTouchX = 0f
-                    private var initialTouchY = 0f
-                    override fun onTouch(v: View?, event: MotionEvent): Boolean {
-                        when (event.action) {
-                            MotionEvent.ACTION_DOWN -> {
-                                initialX = params.x
-                                initialY = params.y
-                                initialTouchX = event.rawX
-                                initialTouchY = event.rawY
-                                return true
-                            }
-                            MotionEvent.ACTION_MOVE -> {
-                                params.x = initialX + (event.rawX - initialTouchX).toInt()
-                                params.y = initialY + (event.rawY - initialTouchY).toInt()
-                                windowManager.updateViewLayout(floatingView, params)
-                                return true
-                            }
+            private void setupInteractions() {
+                View dragBar = floatingView.findViewById(R.id.layoutDragBar);
+                Button btnToggle = floatingView.findViewById(R.id.btnToggle);
+                Button btnSpeed = floatingView.findViewById(R.id.btnSpeed);
+                Button btnClose = floatingView.findViewById(R.id.btnClose);
+                TextView tvSolvedBadge = floatingView.findViewById(R.id.tvSolvedBadge);
+                TextView tvStatus = floatingView.findViewById(R.id.tvStatus);
+                dragBar.setOnTouchListener(new View.OnTouchListener() {
+                    private int initialX, initialY;
+                    private float initialTouchX, initialTouchY;
+                    @Override
+                    public boolean onTouch(View v, MotionEvent event) {
+                        switch (event.getAction()) {
+                            case MotionEvent.ACTION_DOWN:
+                                initialX = params.x;
+                                initialY = params.y;
+                                initialTouchX = event.getRawX();
+                                initialTouchY = event.getRawY();
+                                return true;
+                            case MotionEvent.ACTION_MOVE:
+                                params.x = initialX + (int) (event.getRawX() - initialTouchX);
+                                params.y = initialY + (int) (event.getRawY() - initialTouchY);
+                                windowManager.updateViewLayout(floatingView, params);
+                                return true;
                         }
-                        return false
+                        return false;
                     }
-                })
-                btnToggle.setOnClickListener {
-                    val running = isRunning.get()
-                    isRunning.set(!running)
+                });
+                btnToggle.setOnClickListener(v -> {
+                    boolean running = isRunning.get();
+                    isRunning.set(!running);
                     if (!running) {
-                        btnToggle.text = "⏸ 暂停"
-                        tvStatus.text = "⚡ 极速答题中..."
-                        startSolveLoop(tvSolvedBadge, tvStatus)
+                        btnToggle.setText("⏸ 暂停");
+                        tvStatus.setText("⚡ 极速答题中...");
+                        startSolveLoop(tvSolvedBadge, tvStatus);
                     } else {
-                        btnToggle.text = "▶ 开始"
-                        tvStatus.text = "已暂停"
+                        btnToggle.setText("▶ 开始");
+                        tvStatus.setText("已暂停");
                     }
-                }
-                var speedIndex = 0
-                val speeds = arrayOf("⚡ 极限", "🚀 极速", "🎯 稳健")
-                val strokeTimes = arrayOf(15L, 35L, 80L)
-                btnSpeed.setOnClickListener {
-                    speedIndex = (speedIndex + 1) % speeds.size
-                    btnSpeed.text = speeds[speedIndex]
-                    strokeSpeedMs = strokeTimes[speedIndex]
-                    tvStatus.text = "切换为: ${speeds[speedIndex]}"
-                }
-                btnClose.setOnClickListener { stopSelf() }
+                });
+                final String[] speeds = {"⚡ 极限", "🚀 极速", "🎯 稳健"};
+                final long[] strokeTimes = {15, 35, 80};
+                final int[] speedIndex = {0};
+                btnSpeed.setOnClickListener(v -> {
+                    speedIndex[0] = (speedIndex[0] + 1) % speeds.length;
+                    btnSpeed.setText(speeds[speedIndex[0]]);
+                    strokeSpeedMs = strokeTimes[speedIndex[0]];
+                    tvStatus.setText("切换为: " + speeds[speedIndex[0]]);
+                });
+                btnClose.setOnClickListener(v -> stopSelf());
             }
-            private fun startSolveLoop(tvSolvedBadge: TextView, tvStatus: TextView) {
-                loopThread?.interrupt()
-                loopThread = Thread {
-                    val dm = resources.displayMetrics
-                    val cx = dm.widthPixels * 0.50f
-                    val cy = dm.heightPixels * 0.70f
-                    val size = dm.widthPixels * 0.12f
-                    while (isRunning.get() && !Thread.currentThread().isInterrupted) {
-                        val bitmap = captureManager?.captureQuestionBitmap()
-                        if (bitmap != null) {
-                            captureManager?.recognizeText(bitmap) { text ->
-                                if (text.isNotBlank() && text != lastQuestionText) {
-                                    val answer = KousuanSolver.solve(text)
-                                    if (answer != null) {
-                                        lastQuestionText = text
-                                        solvedCount++
-                                        val accService = KousuanAccessibilityService.instance
-                                        if (accService != null) {
-                                            when (answer) {
-                                                ">" -> accService.drawGreaterThan(cx, cy, size, strokeSpeedMs)
-                                                "<" -> accService.drawLessThan(cx, cy, size, strokeSpeedMs)
-                                                "=" -> accService.drawEqual(cx, cy, size, size * 0.4f, strokeSpeedMs)
+            private void startSolveLoop(TextView tvSolvedBadge, TextView tvStatus) {
+                if (loopThread != null) loopThread.interrupt();
+                loopThread = new Thread(() -> {
+                    DisplayMetrics dm = getResources().getDisplayMetrics();
+                    float cx = dm.widthPixels * 0.50f;
+                    float cy = dm.heightPixels * 0.70f;
+                    float size = dm.widthPixels * 0.12f;
+                    while (isRunning.get() && !Thread.currentThread().isInterrupted()) {
+                        if (captureManager != null) {
+                            Bitmap bitmap = captureManager.captureQuestionBitmap();
+                            if (bitmap != null) {
+                                captureManager.recognizeText(bitmap, text -> {
+                                    if (text != null && !text.trim().isEmpty() && !text.equals(lastQuestionText)) {
+                                        String answer = KousuanSolver.solve(text);
+                                        if (answer != null) {
+                                            lastQuestionText = text;
+                                            solvedCount++;
+                                            KousuanAccessibilityService acc = KousuanAccessibilityService.instance;
+                                            if (acc != null) {
+                                                if (">".equals(answer)) acc.drawGreaterThan(cx, cy, size, strokeSpeedMs);
+                                                else if ("<".equals(answer)) acc.drawLessThan(cx, cy, size, strokeSpeedMs);
+                                                else if ("=".equals(answer)) acc.drawEqual(cx, cy, size, size * 0.4f, strokeSpeedMs);
                                             }
-                                        }
-                                        mainHandler.post {
-                                            tvSolvedBadge.text = " [$solvedCount 题]"
-                                            tvStatus.text = "答: $text -> $answer"
+                                            mainHandler.post(() -> {
+                                                tvSolvedBadge.setText(" [" + solvedCount + " 题]");
+                                                tvStatus.setText("答: " + text + " -> " + answer);
+                                            });
                                         }
                                     }
-                                }
+                                });
                             }
                         }
                         try {
-                            Thread.sleep(15)
-                        } catch (e: InterruptedException) {
-                            break
+                            Thread.sleep(15);
+                        } catch (InterruptedException e) {
+                            break;
                         }
                     }
-                }.apply { start() }
+                });
+                loopThread.start();
             }
-            override fun onDestroy() {
-                isRunning.set(false)
-                loopThread?.interrupt()
-                if (::floatingView.isInitialized) {
-                    windowManager.removeView(floatingView)
+            @Override
+            public void onDestroy() {
+                isRunning.set(false);
+                if (loopThread != null) loopThread.interrupt();
+                if (floatingView != null && windowManager != null) {
+                    windowManager.removeView(floatingView);
                 }
-                captureManager?.release()
-                super.onDestroy()
+                if (captureManager != null) captureManager.release();
+                super.onDestroy();
             }
         }
         EOF
 
-        cat << 'EOF' > app/src/main/java/com/kousuan/helper/MainActivity.kt
-        package com.kousuan.helper
-        import android.app.Activity
-        import android.content.Context
-        import android.content.Intent
-        import android.media.projection.MediaProjectionManager
-        import android.net.Uri
-        import android.os.Build
-        import android.os.Bundle
-        import android.provider.Settings
-        import android.widget.Button
-        import android.widget.Toast
-        import androidx.activity.result.contract.ActivityResultContracts
-        import androidx.appcompat.app.AppCompatActivity
-        class MainActivity : AppCompatActivity() {
-            private lateinit var btnPermOverlay: Button
-            private lateinit var btnPermAcc: Button
-            private lateinit var btnStartHelper: Button
-            private val screenCaptureLauncher = registerForActivityResult(
-                ActivityResultContracts.StartActivityForResult()
-            ) { result ->
-                if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-                    val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-                    val projection = mpManager.getMediaProjection(result.resultCode, result.data!!)
-                    val captureManager = ScreenCaptureManager(this)
-                    captureManager.initProjection(projection)
-                    FloatingWindowService.captureManager = captureManager
-                    val serviceIntent = Intent(this, FloatingWindowService::class.java)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        startForegroundService(serviceIntent)
-                    } else {
-                        startService(serviceIntent)
+        cat << 'EOF' > app/src/main/java/com/kousuan/helper/MainActivity.java
+        package com.kousuan.helper;
+        import android.app.Activity;
+        import android.content.Context;
+        import android.content.Intent;
+        import android.media.projection.MediaProjection;
+        import android.media.projection.MediaProjectionManager;
+        import android.net.Uri;
+        import android.os.Build;
+        import android.os.Bundle;
+        import android.provider.Settings;
+        import android.widget.Button;
+        import android.widget.Toast;
+        import androidx.activity.result.ActivityResultLauncher;
+        import androidx.activity.result.contract.ActivityResultContracts;
+        import androidx.appcompat.app.AppCompatActivity;
+        public class MainActivity extends AppCompatActivity {
+            private Button btnPermOverlay;
+            private Button btnPermAcc;
+            private Button btnStartHelper;
+            private final ActivityResultLauncher<Intent> screenCaptureLauncher = registerForActivityResult(
+                    new ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
+                            MediaProjectionManager mpManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+                            MediaProjection projection = mpManager.getMediaProjection(result.getResultCode(), result.getData());
+                            ScreenCaptureManager captureManager = new ScreenCaptureManager(this);
+                            captureManager.initProjection(projection);
+                            FloatingWindowService.captureManager = captureManager;
+                            Intent serviceIntent = new Intent(this, FloatingWindowService.class);
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                startForegroundService(serviceIntent);
+                            } else {
+                                startService(serviceIntent);
+                            }
+                            Toast.makeText(this, "⚡ 秒答悬浮窗已开启！请进入小猿口算", Toast.LENGTH_LONG).show() ;
+                            finish();
+                        } else {
+                            Toast.makeText(this, "需要授予截屏权限才能识别题目！", Toast.LENGTH_SHORT).show();
+                        }
                     }
-                    Toast.makeText(this, "⚡ 秒答悬浮窗已开启！请进入小猿口算", Toast.LENGTH_LONG).show()
-                    finish()
-                } else {
-                    Toast.makeText(this, "需要授予截屏权限才能识别题目！", Toast.LENGTH_SHORT).show()
-                }
-            }
-            override fun onCreate(savedInstanceState: Bundle?) {
-                super.onCreate(savedInstanceState)
-                setContentView(R.layout.activity_main)
-                btnPermOverlay = findViewById(R.id.btnPermOverlay)
-                btnPermAcc = findViewById(R.id.btnPermAcc)
-                btnStartHelper = findViewById(R.id.btnStartHelper)
-                btnPermOverlay.setOnClickListener {
+            );
+            @Override
+            protected void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                setContentView(R.layout.activity_main);
+                btnPermOverlay = findViewById(R.id.btnPermOverlay);
+                btnPermAcc = findViewById(R.id.btnPermAcc);
+                btnStartHelper = findViewById(R.id.btnStartHelper);
+                btnPermOverlay.setOnClickListener(v -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        val intent = Intent(
-                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                            Uri.parse("package:$packageName")
-                        )
-                        startActivity(intent)
+                        Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
+                        startActivity(intent);
                     }
-                }
-                btnPermAcc.setOnClickListener {
-                    val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                    startActivity(intent)
-                }
-                btnStartHelper.setOnClickListener {
+                });
+                btnPermAcc.setOnClickListener(v -> {
+                    Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+                    startActivity(intent);
+                });
+                btnStartHelper.setOnClickListener(v -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-                        Toast.makeText(this, "请先开启【悬浮窗权限】", Toast.LENGTH_SHORT).show()
-                        return@setOnClickListener
+                        Toast.makeText(this, "请先开启【悬浮窗权限】", Toast.LENGTH_SHORT).show();
+                        return;
                     }
                     if (KousuanAccessibilityService.instance == null) {
-                        Toast.makeText(this, "请先开启【无障碍服务】", Toast.LENGTH_SHORT).show()
-                        return@setOnClickListener
+                        Toast.makeText(this, "请先开启【无障碍服务】", Toast.LENGTH_SHORT).show();
+                        return;
                     }
-                    val mpManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-                    screenCaptureLauncher.launch(mpManager.createScreenCaptureIntent())
-                }
+                    MediaProjectionManager mpManager = (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
+                    screenCaptureLauncher.launch(mpManager.createScreenCaptureIntent());
+                });
             }
-            override fun onResume() {
-                super.onResume()
+            @Override
+            protected void onResume() {
+                super.onResume();
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Settings.canDrawOverlays(this)) {
-                    btnPermOverlay.text = "已开启 ✓"
-                    btnPermOverlay.isEnabled = false
+                    btnPermOverlay.setText("已开启 ✓");
+                    btnPermOverlay.setEnabled(false);
                 }
                 if (KousuanAccessibilityService.instance != null) {
-                    btnPermAcc.text = "已开启 ✓"
-                    btnPermAcc.isEnabled = false
+                    btnPermAcc.setText("已开启 ✓");
+                    btnPermAcc.setEnabled(false);
                 }
             }
         }
         EOF
 
-        # 编译 Debug APK
+        # 极速编译生成 APK
         gradle assembleDebug --no-daemon
 
     - name: Upload APK to Artifacts
