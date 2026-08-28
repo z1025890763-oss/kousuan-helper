@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layoutFloatingRoot"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/bg_floating_panel"
+    android:padding="8dp">
+
+    <!-- 顶部状态栏与拖动手柄 -->
+    <LinearLayout
+        android:id="@+id/layoutDragBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="4dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚡ 口算秒答"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvSolvedBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=" [0题]"
+            android:textColor="#38BDF8"
+            android:textSize="12sp"
+            android:layout_marginStart="4dp" />
+    </LinearLayout>
+
+    <!-- 按钮行 -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <Button
+            android:id="@+id/btnToggle"
+            android:layout_width="72dp"
+            android:layout_height="36dp"
+            android:text="▶ 开始"
+            android:textSize="11sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#22C55E"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/btnSpeed"
+            android:layout_width="72dp"
+            android:layout_height="36dp"
+            android:text="⚡ 极限"
+            android:textSize="11sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#3B82F6"
+            android:layout_marginEnd="4dp" />
+
+        <Button
+            android:id="@+id/btnClose"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:text="✕"
+            android:textSize="11sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#EF4444" />
+    </LinearLayout>
+
+    <!-- 状态指示 -->
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="就绪 | 一加ACE5 极速引擎"
+        android:textColor="#94A3B8"
+        android:textSize="10sp"
+        android:layout_marginTop="2dp"
+        android:maxLines="1" />
+
+</LinearLayout>

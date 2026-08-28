@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">口算秒答助手</string>
+    <string name="accessibility_desc">用于口算PK对战中自动下发极速手势笔画</string>
+</resources>
